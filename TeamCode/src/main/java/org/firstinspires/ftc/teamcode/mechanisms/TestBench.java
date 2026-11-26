@@ -3,12 +3,16 @@ package org.firstinspires.ftc.teamcode.mechanisms;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class TestBench {
     private DigitalChannel touchSensor; // touchSensorIntake or touchSensorOnClaw
     private DcMotor motor; // linearSlideMotor0 or some other type stuff
     private double ticksPerRev; // revolution
+    private DistanceSensor distance;
 
     public void init(HardwareMap hwMap) {
         //--------------- TOUCH SENSOR --------------
@@ -21,6 +25,9 @@ public class TestBench {
         ticksPerRev = motor.getMotorType().getTicksPerRev();
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE); // fully brakes motor
         motor.setDirection(DcMotorSimple.Direction.REVERSE); // reverses direction of motor
+
+        //------------- DISTANCE SENSOR -------------
+        distance = hwMap.get(DistanceSensor.class, "sensor_distance");
 
     }
 
@@ -43,4 +50,9 @@ public class TestBench {
      public void setZeroPowerBehavior(DcMotor.ZeroPowerBehavior zeroBehavior) {
         motor.setZeroPowerBehavior(zeroBehavior);
      }
+
+     //----------------- Distance Sensor Methods -----------------
+    public double getDistance() {
+        return distance.getDistance(DistanceUnit.CM); //CM, MM, INCHES, METERS
+    }
 }
