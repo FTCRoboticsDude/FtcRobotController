@@ -1,11 +1,16 @@
 package org.firstinspires.ftc.teamcode.mechanisms;
 
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
+import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class TestBench {
@@ -13,6 +18,9 @@ public class TestBench {
     private DcMotor motor; // linearSlideMotor0 or some other type stuff
     private double ticksPerRev; // revolution
     private DistanceSensor distance;
+    private Servo servoPos; // positional servo
+    private CRServo servoRot; // continuous rotation servo
+    NormalizedColorSensor colorSensor;
 
     public void init(HardwareMap hwMap) {
         //--------------- TOUCH SENSOR --------------
@@ -28,6 +36,17 @@ public class TestBench {
 
         //------------- DISTANCE SENSOR -------------
         distance = hwMap.get(DistanceSensor.class, "sensor_distance");
+
+        //--------------  SERVOS ----------------
+        servoPos = hwMap.get(Servo.class, "servo_pos");
+        servoRot = hwMap.get(CRServo.class, "servo_rot");
+        servoPos.scaleRange(0.5, 1); // sets servoPos range from 0.5 to 1.0
+        servoPos.setDirection(Servo.Direction.REVERSE); // reverses servoPos movement
+        servoRot.setDirection(DcMotorSimple.Direction.REVERSE); // reverses servoRot movement
+
+        //------------ COLOR SENSORS -------------
+        colorSensor = hwMap.get(NormalizedColorSensor.class, "sensor_color_distance");
+        colorSensor.setGain(8); // sets gain higher than 1 to make values higher; needs tweaking
 
     }
 
@@ -54,5 +73,60 @@ public class TestBench {
      //----------------- Distance Sensor Methods -----------------
     public double getDistance() {
         return distance.getDistance(DistanceUnit.CM); //CM, MM, INCHES, METERS
+    }
+
+    //------------------ Servos Methods ------------------
+    public void setServoPos(double angle) {
+        servoPos.setPosition(angle);
+    }
+    public void setServoRot(double power) {
+        servoRot.setPower(power);
+    }
+
+    //---------------- Color Sensors ----------------
+    public enum DetectedColor {
+        // makes list of colors going to be detected (also includes unknown for unknown values)
+        // needs calibration for certain colors
+        RED,
+        BLUE,
+        YELLOW,
+        UNKNOWN
+    }
+
+    public DetectedColor getDetectedColor(Telemetry telemetry) {
+        // returns 4 fraction values: red, green, blue, alpha (brightness)
+        NormalizedRGBA colors = colorSensor.getNormalizedColors();
+
+        // normalizes colors regardless of distance (divides by alpha)
+        float normRed, normGreen, normBlue;
+        normRed = colors.red / colors.alpha;
+        normGreen = colors.green / colors.alpha;
+        normBlue = colors.blue / colors.alpha;
+
+        telemetry.addData("Red", normRed);
+        telemetry.addData("Green", normGreen);
+        telemetry.addData("Blue", normBlue);
+
+        //TODO add if statements for specific colors added
+        /*
+        ---------- Calibrating colors ----------
+        red, green, blue
+        RED = >0.35, <0.3, <0.3
+        YELLOW = >0.5, >0.9, <0.6
+        BLUE = <0.2, <0.5, >0.5
+         */
+
+        if (normRed > 0.35 && normGreen < 0.3 && normBlue < 0.3) {
+            return DetectedColor.RED;
+        }
+        else if (normRed > 0.5 && normGreen > 0.9 && normBlue < 0.6) {
+            return DetectedColor.YELLOW;
+        }
+        else if (normRed < 0.2 && normGreen < 0.5 && normBlue > 0.5) {
+            return DetectedColor.BLUE;
+        }
+        else {
+            return DetectedColor.UNKNOWN;
+        }
     }
 }
