@@ -1,16 +1,19 @@
 package org.firstinspires.ftc.teamcode.mechanisms;
 
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class TestBench {
@@ -20,7 +23,8 @@ public class TestBench {
     private DistanceSensor distance;
     private Servo servoPos; // positional servo
     private CRServo servoRot; // continuous rotation servo
-    NormalizedColorSensor colorSensor;
+    private NormalizedColorSensor colorSensor;
+    private IMU imu;
 
     public void init(HardwareMap hwMap) {
         //--------------- TOUCH SENSOR --------------
@@ -47,6 +51,18 @@ public class TestBench {
         //------------ COLOR SENSORS -------------
         colorSensor = hwMap.get(NormalizedColorSensor.class, "sensor_color_distance");
         colorSensor.setGain(8); // sets gain higher than 1 to make values higher; needs tweaking
+
+        //------------ IMU ------------
+        imu = hwMap.get(IMU.class, "imu");
+
+        // Orients imu on bot based off of the logo and the usb port
+        RevHubOrientationOnRobot RevOrientation = new RevHubOrientationOnRobot(
+                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD
+        );
+
+        // initializes the imu
+        imu.initialize(new IMU.Parameters(RevOrientation));
 
     }
 
@@ -107,7 +123,7 @@ public class TestBench {
         telemetry.addData("Green", normGreen);
         telemetry.addData("Blue", normBlue);
 
-        //TODO add if statements for specific colors added
+        // Fun Fact: You can make TODOs to remember that you have to do something
         /*
         ---------- Calibrating colors ----------
         red, green, blue
@@ -129,4 +145,10 @@ public class TestBench {
             return DetectedColor.UNKNOWN;
         }
     }
+
+    // -------------- IMU Methods --------------
+    public double getHeading(AngleUnit angleUnit) {
+        return imu.getRobotYawPitchRollAngles().getYaw(angleUnit);
+    }
+
 }
